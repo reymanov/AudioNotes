@@ -1,5 +1,5 @@
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { RecorderView } from "./views/RecorderView";
+import { RecorderView } from "./src/views/RecorderView";
 
 export default function App() {
   return (

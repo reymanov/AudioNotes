@@ -14,6 +14,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
+import { RecordingListItem } from "../components/RecordingListItem";
 
 export const RecorderView = () => {
   const [recording, setRecording] = useState<Recording | undefined>(undefined);
@@ -61,8 +62,9 @@ export const RecorderView = () => {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <FlatList
+        contentContainerStyle={styles.list}
         data={notes}
-        renderItem={({ item }) => <Text>{item}</Text>}
+        renderItem={({ item }) => <RecordingListItem uri={item} />}
         keyExtractor={(item) => item}
       />
 
@@ -84,9 +86,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#ecf0f1",
   },
+  list: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
   footer: {
     backgroundColor: "white",
-    height: 150,
+    height: 120,
     justifyContent: "center",
     alignItems: "center",
   },
