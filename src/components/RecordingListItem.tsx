@@ -3,6 +3,10 @@ import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { AVPlaybackStatus, Audio } from "expo-av";
 import { Sound } from "expo-av/build/Audio";
 import { FontAwesome5 } from "@expo/vector-icons";
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 
 interface RecordingListItemProps {
   uri: string;
@@ -16,15 +20,15 @@ export const RecordingListItem = ({ uri }: RecordingListItemProps) => {
     setStatus(newStatus);
 
     if (newStatus.isLoaded && newStatus.didJustFinish) {
-      await sound?.setPositionAsync(0);
       await sound?.pauseAsync();
+      await sound?.setPositionAsync(0);
     }
   }
 
   async function loadSound() {
     const { sound } = await Audio.Sound.createAsync(
       { uri },
-      undefined,
+      { progressUpdateIntervalMillis: 1000 / 60 },
       onPlaybackStatusUpdate
     );
     setSound(sound);
@@ -32,6 +36,7 @@ export const RecordingListItem = ({ uri }: RecordingListItemProps) => {
 
   async function playSound() {
     if (!sound) return;
+
     await sound.replayAsync();
   }
 
@@ -61,10 +66,17 @@ export const RecordingListItem = ({ uri }: RecordingListItemProps) => {
   }, [sound]);
 
   const isPlaying = status?.isLoaded ? status.isPlaying : false;
+
   const position = status?.isLoaded ? status.positionMillis : 0;
   const duration = status?.isLoaded ? status.durationMillis : 1;
 
-  const progress = (position / duration) * 100;
+  const progress = duration ? (position / duration) * 100 : 0;
+
+  const animatedIndicatorStyle = useAnimatedStyle(() => {
+    return {
+      left: `${progress}%`,
+    };
+  });
 
   return (
     <View style={styles.container}>
@@ -78,7 +90,9 @@ export const RecordingListItem = ({ uri }: RecordingListItemProps) => {
 
       <View style={styles.playbackContainer}>
         <View style={styles.playbackBackground} />
-        <View style={[styles.playbackIndicator, { left: `${progress}%` }]} />
+        <Animated.View
+          style={[styles.playbackIndicator, animatedIndicatorStyle]}
+        />
 
         <Text style={styles.position}>{formatMilliseconds(position)}</Text>
         <Text style={styles.duration}>{formatMilliseconds(duration)}</Text>
