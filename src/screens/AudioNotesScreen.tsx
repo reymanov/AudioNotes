@@ -14,19 +14,27 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { RecordingListItem } from "../components/RecordingListItem";
+import { AudioNoteListItem } from "../components/AudioNoteListItem";
 
-export const RecordingsView = () => {
+export type AudioNote = {
+  uri: string;
+  metering: number[];
+};
+
+export const AudioNotesScreen = () => {
   const [recording, setRecording] = useState<Recording | undefined>(undefined);
-  const [notes, setNotes] = useState<string[]>([]);
+  const [audioNotes, setAudioNotes] = useState<AudioNote[]>([]);
+
+  const [audioMetering, setAudioMetering] = useState<number[]>([]);
 
   const metering = useSharedValue(-100);
 
   async function startRecording() {
     try {
+      setAudioMetering([]);
+
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -36,11 +44,15 @@ export const RecordingsView = () => {
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
         undefined,
-        1000 / 60
+        100
       );
       setRecording(recording);
+
       recording.setOnRecordingStatusUpdate((status) => {
-        metering.value = status.metering || -100;
+        if (status.metering) {
+          metering.value = status.metering;
+          setAudioMetering((curr) => [...curr, status.metering || -100]);
+        }
       });
     } catch (err) {
       console.error("Failed to start recording", err);
@@ -58,7 +70,10 @@ export const RecordingsView = () => {
     const uri = recording.getURI();
 
     if (uri) {
-      setNotes((existingNotes) => [uri, ...existingNotes]);
+      setAudioNotes((existingNotes) => [
+        { uri, metering: audioMetering },
+        ...existingNotes,
+      ]);
     }
   }
 
@@ -87,14 +102,16 @@ export const RecordingsView = () => {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <FlatList
         contentContainerStyle={styles.list}
-        data={notes}
-        renderItem={({ item }) => <RecordingListItem uri={item} />}
-        keyExtractor={(item) => item}
+        data={audioNotes}
+        renderItem={({ item }) => <AudioNoteListItem note={item} />}
+        keyExtractor={(item) => item.uri}
       />
 
       <View style={styles.footer}>
         <View>
-          <Animated.View style={[styles.recordWave, animatedRecordWave]} />
+          {recording && (
+            <Animated.View style={[styles.recordWave, animatedRecordWave]} />
+          )}
           <Pressable
             style={styles.recordButton}
             onPress={recording ? stopRecording : startRecording}
@@ -140,10 +157,6 @@ const styles = StyleSheet.create({
   },
   recordWave: {
     position: "absolute",
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
     borderRadius: 1000,
     backgroundColor: "#FF000055",
   },
