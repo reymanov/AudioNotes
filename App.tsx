@@ -1,10 +1,10 @@
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AudioNotesScreen } from "./src/screens/AudioNotesScreen";
+import { RecordingsScreen } from "./src/screens/RecordingsScreen";
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AudioNotesScreen />
+      <RecordingsScreen />
     </SafeAreaProvider>
   );
 }
